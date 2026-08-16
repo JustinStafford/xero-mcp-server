@@ -19,6 +19,19 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const cache = new Map<string, { codes: Set<string>; fetchedAt: number }>();
 
+/**
+ * Drop the cached chart for an organisation.
+ *
+ * Must be called after creating or editing an account: otherwise a code that
+ * was just created is absent from the cache and the guard rejects the very
+ * next journal that uses it, for up to the cache lifetime.
+ *
+ * Defaults to the organisation of the current call.
+ */
+export const invalidateAccountCodes = (tenantId?: string): void => {
+  cache.delete(tenantId ?? xeroClient.tenantId);
+};
+
 const getAccountCodes = async (): Promise<Set<string>> => {
   const tenantId = xeroClient.tenantId;
 

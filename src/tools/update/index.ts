@@ -1,3 +1,4 @@
+import UpdateAccountTool from "./update-account.tool.js";
 import UpdateBankTransactionTool from "./update-bank-transaction.tool.js";
 import UpdateContactTool from "./update-contact.tool.js";
 import UpdateCreditNoteTool from "./update-credit-note.tool.js";
@@ -10,6 +11,7 @@ import UpdateTrackingOptionsTool from "./update-tracking-options.tool.js";
 
 // The NZ payroll timesheet tools are de-registered — see src/tools/list/index.ts.
 export const UpdateTools = [
+  UpdateAccountTool,
   UpdateContactTool,
   UpdateCreditNoteTool,
   UpdateInvoiceTool,
