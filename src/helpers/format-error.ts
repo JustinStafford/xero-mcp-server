@@ -40,6 +40,47 @@ function formatHttpStatus(status: number): string {
 }
 
 /**
+ * The AU payroll API rejects with a JSON *string* whose body is XML, rather
+ * than the object shape the accounting endpoints use. Left unhandled it falls
+ * through to the generic message, which turns an actionable failure such as
+ * "Payroll has not been purchased" into "An unexpected error occurred".
+ */
+function parseStringifiedError(
+  error: unknown,
+): { status?: number; message?: string } | null {
+  if (typeof error !== "string") return null;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(error);
+  } catch {
+    return null;
+  }
+
+  const response = (parsed as { response?: unknown })?.response;
+  if (typeof response !== "object" || response === null) return null;
+
+  const status = (response as { statusCode?: unknown }).statusCode;
+  const body = (response as { body?: unknown }).body;
+
+  // Whitelist extraction only — the surrounding object carries the caller's
+  // bearer token in `request.headers.authorization`.
+  let message: string | undefined;
+  if (typeof body === "string") {
+    message = /<Message>([\s\S]*?)<\/Message>/.exec(body)?.[1]?.trim();
+  } else if (typeof body === "object" && body !== null) {
+    const detail = (body as { Detail?: unknown; Message?: unknown });
+    if (typeof detail.Message === "string") message = detail.Message;
+    else if (typeof detail.Detail === "string") message = detail.Detail;
+  }
+
+  return {
+    status: typeof status === "number" ? status : undefined,
+    message: message || undefined,
+  };
+}
+
+/**
  * Format error messages for return to the LLM.
  *
  * Never stringify unknown error objects — the xero-node SDK rejects with a
@@ -69,6 +110,22 @@ export function formatError(error: unknown): string {
     const title = problem?.title ?? body?.httpStatusCode ?? "HTTP error";
     const detail = problem?.detail ?? body?.Detail;
     return detail ? `${status} ${title}: ${detail}` : `${status} ${title}`;
+  }
+
+  const stringified = parseStringifiedError(error);
+  if (stringified) {
+    // Prefer Xero's own wording: a payroll 403 means "not purchased", not
+    // "you lack permission", and the generic status text would mislead.
+    if (stringified.message) {
+      return stringified.status
+        ? `${stringified.status}: ${stringified.message}`
+        : stringified.message;
+    }
+    if (stringified.status !== undefined) {
+      const mapped = formatHttpStatus(stringified.status);
+      if (mapped) return mapped;
+      return `Xero returned HTTP ${stringified.status}.`;
+    }
   }
 
   if (error instanceof Error) {

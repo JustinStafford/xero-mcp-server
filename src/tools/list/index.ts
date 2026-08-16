@@ -10,26 +10,32 @@ import ListItemsTool from "./list-items.tool.js";
 import ListManualJournalsTool from "./list-manual-journals.tool.js";
 import ListOrganisationDetailsTool from "./list-organisation-details.tool.js";
 import ListPaymentsTool from "./list-payments.tool.js";
-import ListPayrollEmployeeLeaveBalancesTool
-  from "./list-payroll-employee-leave-balances.tool.js";
-import ListPayrollEmployeeLeaveTypesTool
-  from "./list-payroll-employee-leave-types.tool.js";
-import ListPayrollEmployeeLeaveTool
-  from "./list-payroll-employee-leave.tool.js";
-import ListPayrollEmployeesTool from "./list-payroll-employees.tool.js";
-import ListPayrollLeavePeriodsToolTool
-  from "./list-payroll-leave-periods.tool.js";
-import ListPayrollLeaveTypesTool from "./list-payroll-leave-types.tool.js";
-import ListPayrollTimesheetsTool from "./list-payroll-timesheets.tool.js";
+import ListPayrollAuEmployeesTool from "./list-payroll-au-employees.tool.js";
+import ListPayrollPayRunsTool from "./list-payroll-pay-runs.tool.js";
 import ListProfitAndLossTool from "./list-profit-and-loss.tool.js";
 import ListQuotesTool from "./list-quotes.tool.js";
 import ListReportBalanceSheetTool from "./list-report-balance-sheet.tool.js";
 import ListTaxRatesTool from "./list-tax-rates.tool.js";
+import ListTenantsTool from "./list-tenants.tool.js";
 import ListTrackingCategoriesTool from "./list-tracking-categories.tool.js";
 import ListTrialBalanceTool from "./list-trial-balance.tool.js";
 import ListContactGroupsTool from "./list-contact-groups.tool.js";
 
+/**
+ * The stock NZ payroll tools are intentionally NOT registered here.
+ *
+ * All 14 of them call `payrollNZApi`, which cannot serve an Australian
+ * organisation — every call fails. Their files are left in place so they can be
+ * re-registered if an NZ organisation is ever connected. The Australian
+ * equivalents below replace the read paths that matter.
+ *
+ * De-registered: list-payroll-employees (NZ), list-payroll-employee-leave,
+ * list-payroll-leave-periods, list-payroll-employee-leave-types,
+ * list-payroll-employee-leave-balances, list-payroll-leave-types,
+ * list-timesheets.
+ */
 export const ListTools = [
+  ListTenantsTool,
   ListAccountsTool,
   ListContactsTool,
   ListCreditNotesTool,
@@ -42,17 +48,14 @@ export const ListTools = [
   ListPaymentsTool,
   ListProfitAndLossTool,
   ListBankTransactionsTool,
-  ListPayrollEmployeesTool,
   ListReportBalanceSheetTool,
   ListOrganisationDetailsTool,
-  ListPayrollEmployeeLeaveTool,
-  ListPayrollLeavePeriodsToolTool,
-  ListPayrollEmployeeLeaveTypesTool,
-  ListPayrollEmployeeLeaveBalancesTool,
-  ListPayrollLeaveTypesTool,
   ListAgedReceivablesByContact,
   ListAgedPayablesByContact,
-  ListPayrollTimesheetsTool,
   ListContactGroupsTool,
-  ListTrackingCategoriesTool
+  ListTrackingCategoriesTool,
+
+  // Australian payroll
+  ListPayrollAuEmployeesTool,
+  ListPayrollPayRunsTool,
 ];

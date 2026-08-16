@@ -142,3 +142,8 @@ dist
 
 # Cursor IDE
 .cursor/
+
+# Xero OAuth token set (contains a live refresh token)
+.xero-mcp/
+xero-token.json
+*.token.json

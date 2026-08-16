@@ -156,3 +156,49 @@ describe("formatError", () => {
     });
   });
 });
+
+describe("stringified payroll errors", () => {
+  // The AU payroll API rejects with a JSON string wrapping an XML body.
+  const auPayroll403 = JSON.stringify({
+    response: {
+      statusCode: 403,
+      body: '<Response xmlns:i="http://www.w3.org/2001/XMLSchema-instance"><ErrorNumber>0</ErrorNumber><Type>Error</Type><Message>Payroll has not been purchased</Message></Response>',
+    },
+  });
+
+  it("extracts Xero's own message rather than the generic 403 text", () => {
+    expect(formatError(auPayroll403)).toBe("403: Payroll has not been purchased");
+  });
+
+  it("falls back to the mapped status when no message is present", () => {
+    const noMessage = JSON.stringify({ response: { statusCode: 404, body: "<Response/>" } });
+    expect(formatError(noMessage)).toBe("The requested resource was not found in Xero.");
+  });
+
+  it("reports an unmapped status rather than a generic failure", () => {
+    const teapot = JSON.stringify({ response: { statusCode: 418, body: "<Response/>" } });
+    expect(formatError(teapot)).toBe("Xero returned HTTP 418.");
+  });
+
+  it("handles an object body carrying Message", () => {
+    const objectBody = JSON.stringify({
+      response: { statusCode: 400, body: { Message: "Pay run is already posted" } },
+    });
+    expect(formatError(objectBody)).toBe("400: Pay run is already posted");
+  });
+
+  it("ignores non-JSON strings", () => {
+    expect(formatError("just a string")).toBe(
+      "An unexpected error occurred while communicating with Xero.",
+    );
+  });
+
+  it("never leaks an authorization header present on the error", () => {
+    const withAuth = JSON.stringify({
+      response: { statusCode: 403, body: "<Response><Message>Nope</Message></Response>" },
+      request: { headers: { authorization: "Bearer super-secret-token" } },
+    });
+    expect(formatError(withAuth)).not.toContain("super-secret-token");
+    expect(formatError(withAuth)).toBe("403: Nope");
+  });
+});

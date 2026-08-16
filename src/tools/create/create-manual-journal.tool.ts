@@ -50,7 +50,10 @@ const CreateManualJournalTool = CreateXeroTool(
       .enum(["DRAFT", "POSTED", "DELETED", "VOIDED", "ARCHIVED"])
       .optional()
       .describe(
-        "Optional status of the manual journal (DRAFT, POSTED, DELETED, VOIDED, ARCHIVED), DRAFT by default",
+        "Optional status of the manual journal. Defaults to DRAFT, which is almost always \
+what you want: a draft journal can be deleted, whereas a posted one must be reversed with \
+a second journal. Only pass POSTED when the user has explicitly asked for the journal to \
+be posted.",
       ),
     url: z
       .string()
@@ -65,12 +68,16 @@ const CreateManualJournalTool = CreateXeroTool(
   },
   async (args) => {
     try {
+      // Account codes are validated against the target organisation by the
+      // CreateXeroTool middleware before this runs.
       const response = await createXeroManualJournal(
         args.narration,
         args.manualJournalLines,
         args.date,
         args.lineAmountTypes as LineAmountTypes | undefined,
-        args.status as ManualJournal.StatusEnum | undefined,
+        // Default to DRAFT. A mis-posted journal should be a deletion, not a
+        // restatement — so posting must be an explicit choice, never a default.
+        (args.status ?? "DRAFT") as unknown as ManualJournal.StatusEnum,
         args.url,
         args.showOnCashBasisReports,
       );
