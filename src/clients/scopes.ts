@@ -23,6 +23,9 @@ export const XERO_AUTH_SCOPES: string[] = [
   "accounting.contacts",
   "accounting.settings",
 
+  // Source documents attached to invoices, bills and other records
+  "accounting.attachments",
+
   // Transactions (read + write)
   "accounting.invoices",
   "accounting.payments",
@@ -34,6 +37,11 @@ export const XERO_AUTH_SCOPES: string[] = [
   "accounting.reports.balancesheet.read",
   "accounting.reports.profitandloss.read",
   "accounting.reports.trialbalance.read",
+
+  // Fixed asset register. Xero's Assets API is create-and-read only: there is
+  // no endpoint to update, delete, dispose or depreciate an asset, so those
+  // remain Xero UI operations however this scope is granted.
+  "assets",
 
   // Payroll (read-only)
   "payroll.employees.read",

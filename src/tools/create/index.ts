@@ -1,4 +1,7 @@
+import AddInvoiceAttachmentTool from "./add-invoice-attachment.tool.js";
 import CreateAccountTool from "./create-account.tool.js";
+import CreateAssetTool from "./create-asset.tool.js";
+import CreateAssetTypeTool from "./create-asset-type.tool.js";
 import CreateBankTransactionTool from "./create-bank-transaction.tool.js";
 import CreateContactTool from "./create-contact.tool.js";
 import CreateCreditNoteTool from "./create-credit-note.tool.js";
@@ -13,6 +16,9 @@ import CreateTrackingOptionsTool from "./create-tracking-options.tool.js";
 // CreatePayrollTimesheetTool (NZ) is de-registered — see src/tools/list/index.ts.
 export const CreateTools = [
   CreateAccountTool,
+  CreateAssetTool,
+  CreateAssetTypeTool,
+  AddInvoiceAttachmentTool,
   CreateContactTool,
   CreateCreditNoteTool,
   CreateManualJournalTool,

@@ -1,4 +1,8 @@
+import GetAssetSettingsTool from "./get-asset-settings.tool.js";
 import ListAccountsTool from "./list-accounts.tool.js";
+import ListAssetTypesTool from "./list-asset-types.tool.js";
+import ListAssetsTool from "./list-assets.tool.js";
+import ListInvoiceAttachmentsTool from "./list-invoice-attachments.tool.js";
 import ListAgedPayablesByContact from "./list-aged-payables-by-contact.tool.js";
 import ListAgedReceivablesByContact
   from "./list-aged-receivables-by-contact.tool.js";
@@ -54,6 +58,12 @@ export const ListTools = [
   ListAgedPayablesByContact,
   ListContactGroupsTool,
   ListTrackingCategoriesTool,
+  ListInvoiceAttachmentsTool,
+
+  // Fixed assets
+  ListAssetsTool,
+  ListAssetTypesTool,
+  GetAssetSettingsTool,
 
   // Australian payroll
   ListPayrollAuEmployeesTool,
