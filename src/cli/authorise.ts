@@ -20,6 +20,7 @@ import dotenv from "dotenv";
 import { XeroClient } from "xero-node";
 
 import { DEFAULT_REDIRECT_URI, XERO_AUTH_SCOPES } from "../clients/scopes.js";
+import { formatError } from "../helpers/format-error.js";
 import {
   clearTokenSet,
   getTokenFilePath,
@@ -122,7 +123,7 @@ const authoriseOnce = async (): Promise<boolean> => {
            </body></html>`,
         );
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = formatError(error);
         console.error(`\nAuthorisation failed: ${message}`);
         res.writeHead(500, { "Content-Type": "text/html" }).end(
           `<html><body style="font-family:system-ui;padding:3rem">
@@ -201,6 +202,6 @@ const main = async (): Promise<void> => {
 };
 
 main().catch((error) => {
-  console.error("Error:", error instanceof Error ? error.message : error);
+  console.error("Error:", formatError(error));
   process.exit(1);
 });
