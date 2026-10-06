@@ -19,15 +19,7 @@ import {
 
 dotenv.config();
 
-const client_id = process.env.XERO_CLIENT_ID;
-const client_secret = process.env.XERO_CLIENT_SECRET;
-const bearer_token = process.env.XERO_CLIENT_BEARER_TOKEN;
-const auth_mode = process.env.XERO_AUTH_MODE;
 const grant_type = "client_credentials";
-
-if (!bearer_token && (!client_id || !client_secret)) {
-  throw Error("Environment Variables not set - please check your .env file");
-}
 
 abstract class MCPXeroClient extends XeroClient {
   private fallbackTenantId: string;
@@ -333,18 +325,73 @@ class AuthCodeXeroClient extends MCPXeroClient {
   }
 }
 
-export const xeroClient: MCPXeroClient =
-  auth_mode === "oauth"
-    ? new AuthCodeXeroClient({
-        clientId: client_id!,
-        clientSecret: client_secret!,
-      })
-    : bearer_token
-      ? new BearerTokenXeroClient({
-          bearerToken: bearer_token,
-        })
-      : new CustomConnectionsXeroClient({
-          clientId: client_id!,
-          clientSecret: client_secret!,
-          grantType: grant_type,
-        });
+/**
+ * Build the client for the auth mode configured in the environment.
+ *
+ * Credentials are read and checked here rather than at module load, so that
+ * importing anything that (transitively) reaches this module does not require
+ * a configured Xero app. Unit tests import tool helpers freely; only code that
+ * actually talks to Xero pays the credential requirement.
+ */
+function createXeroClient(): MCPXeroClient {
+  const client_id = process.env.XERO_CLIENT_ID;
+  const client_secret = process.env.XERO_CLIENT_SECRET;
+  const bearer_token = process.env.XERO_CLIENT_BEARER_TOKEN;
+  const auth_mode = process.env.XERO_AUTH_MODE;
+
+  if (!bearer_token && (!client_id || !client_secret)) {
+    throw Error("Environment Variables not set - please check your .env file");
+  }
+
+  if (auth_mode === "oauth") {
+    return new AuthCodeXeroClient({
+      clientId: client_id!,
+      clientSecret: client_secret!,
+    });
+  }
+
+  if (bearer_token) {
+    return new BearerTokenXeroClient({ bearerToken: bearer_token });
+  }
+
+  return new CustomConnectionsXeroClient({
+    clientId: client_id!,
+    clientSecret: client_secret!,
+    grantType: grant_type,
+  });
+}
+
+let instance: MCPXeroClient | undefined;
+
+/** The process-wide client, built on first use. */
+export function getXeroClient(): MCPXeroClient {
+  if (!instance) {
+    instance = createXeroClient();
+  }
+  return instance;
+}
+
+/**
+ * Lazy stand-in for the client.
+ *
+ * Call sites keep using `xeroClient.accountingApi...`; the real client is
+ * constructed on the first property access instead of at import time. Methods
+ * are bound to the underlying instance so `this` is never the proxy.
+ */
+export const xeroClient: MCPXeroClient = new Proxy({} as MCPXeroClient, {
+  get(_target, property) {
+    const client = getXeroClient();
+    const value = Reflect.get(client, property, client);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+  set(_target, property, value) {
+    const client = getXeroClient();
+    return Reflect.set(client, property, value, client);
+  },
+  has(_target, property) {
+    return property in getXeroClient();
+  },
+  getPrototypeOf() {
+    return Reflect.getPrototypeOf(getXeroClient());
+  },
+});
