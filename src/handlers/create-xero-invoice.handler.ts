@@ -3,6 +3,10 @@ import { XeroClientResponse } from "../types/tool-response.js";
 import { formatError } from "../helpers/format-error.js";
 import { Invoice, LineItemTracking } from "xero-node";
 import { getClientHeaders } from "../helpers/get-client-headers.js";
+import {
+  assertCurrencyEnabled,
+  parseCurrencyCode,
+} from "../helpers/resolve-currency.js";
 
 interface InvoiceLineItem {
   description: string;
@@ -20,8 +24,15 @@ async function createInvoice(
   type: Invoice.TypeEnum,
   reference: string | undefined,
   date: string | undefined,
+  currencyCode: string | undefined,
+  currencyRate: number | undefined,
 ): Promise<Invoice | undefined> {
   await xeroClient.authenticate();
+
+  const currency = currencyCode ? parseCurrencyCode(currencyCode) : undefined;
+  if (currency !== undefined) {
+    await assertCurrencyEnabled(currency);
+  }
 
   const invoice: Invoice = {
     type: type,
@@ -37,6 +48,10 @@ async function createInvoice(
       ? { invoiceNumber: reference }
       : { reference: reference }),
     status: Invoice.StatusEnum.DRAFT,
+    // Left unset, Xero uses the organisation's base currency and its own daily
+    // rate — which is the wanted behaviour in all but the rare fixed-rate case.
+    ...(currency !== undefined ? { currencyCode: currency } : {}),
+    ...(currencyRate !== undefined ? { currencyRate } : {}),
   };
 
   const response = await xeroClient.accountingApi.createInvoices(
@@ -62,6 +77,8 @@ export async function createXeroInvoice(
   type: Invoice.TypeEnum = Invoice.TypeEnum.ACCREC,
   reference?: string,
   date?: string,
+  currencyCode?: string,
+  currencyRate?: number,
 ): Promise<XeroClientResponse<Invoice>> {
   try {
     const createdInvoice = await createInvoice(
@@ -70,6 +87,8 @@ export async function createXeroInvoice(
       type,
       reference,
       date,
+      currencyCode,
+      currencyRate,
     );
 
     if (!createdInvoice) {

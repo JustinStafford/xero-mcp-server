@@ -1,7 +1,7 @@
 import { xeroClient } from "../clients/xero-client.js";
 import { XeroClientResponse } from "../types/tool-response.js";
 import { formatError } from "../helpers/format-error.js";
-import { Invoice, LineItemTracking } from "xero-node";
+import { Invoice, LineItem, LineItemTracking } from "xero-node";
 import { getClientHeaders } from "../helpers/get-client-headers.js";
 
 interface InvoiceLineItem {
@@ -30,18 +30,30 @@ async function getInvoice(invoiceId: string): Promise<Invoice | undefined> {
 
 async function updateInvoice(
   invoiceId: string,
+  existingInvoice: Invoice,
   lineItems?: InvoiceLineItem[],
   reference?: string,
   dueDate?: string,
   date?: string,
   contactId?: string,
 ): Promise<Invoice | undefined> {
+  // Send the stored line items back when the caller supplied none. Omitting
+  // them is what previously wiped an invoice's lines on a field-only edit.
+  const linesToSend: LineItem[] =
+    lineItems ?? existingInvoice.lineItems ?? [];
+
   const invoice: Invoice = {
-    lineItems: lineItems,
-    reference: reference,
-    dueDate: dueDate,
-    date: date,
-    contact: contactId ? { contactID: contactId } : undefined,
+    lineItems: linesToSend,
+    // Only overwrite a field the caller actually named; everything else keeps
+    // the value already on the invoice.
+    reference: reference ?? existingInvoice.reference,
+    dueDate: dueDate ?? existingInvoice.dueDate,
+    date: date ?? existingInvoice.date,
+    contact: contactId
+      ? { contactID: contactId }
+      : existingInvoice.contact?.contactID
+        ? { contactID: existingInvoice.contact.contactID }
+        : undefined,
   };
 
   const response = await xeroClient.accountingApi.updateInvoice(
@@ -72,7 +84,15 @@ export async function updateXeroInvoice(
   try {
     const existingInvoice = await getInvoice(invoiceId);
 
-    const invoiceStatus = existingInvoice?.status;
+    if (!existingInvoice) {
+      return {
+        result: null,
+        isError: true,
+        error: `No invoice with ID ${invoiceId} exists in this organisation.`,
+      };
+    }
+
+    const invoiceStatus = existingInvoice.status;
 
     // Only allow updates to DRAFT invoices
     if (invoiceStatus !== Invoice.StatusEnum.DRAFT) {
@@ -85,6 +105,7 @@ export async function updateXeroInvoice(
 
     const updatedInvoice = await updateInvoice(
       invoiceId,
+      existingInvoice,
       lineItems,
       reference,
       dueDate,

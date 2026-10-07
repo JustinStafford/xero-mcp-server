@@ -41,10 +41,24 @@ const CreateInvoiceTool = CreateXeroTool(
       If the type is not specified, the default is ACCREC."),
     reference: z.string().describe("A reference number for the invoice.").optional(),
     date: z.string().describe("The date the invoice was created (YYYY-MM-DD format).").optional(),
+    currencyCode: z.string().describe("The three-letter currency code for the invoice or bill, \
+      for example AUD, NZD, USD, GBP or IDR. Leave this out to use the organisation's base currency. \
+      The currency must already be enabled in the organisation — call list-currencies to check.").optional(),
+    currencyRate: z.number().describe("Optional fixed exchange rate to the organisation's base currency. \
+      Leave this out to let Xero apply its own daily rate, which is normally what is wanted. \
+      Only applies when currencyCode is a foreign currency.").optional(),
   },
-  async ({ contactId, lineItems, type, reference, date }) => {
+  async ({ contactId, lineItems, type, reference, date, currencyCode, currencyRate }) => {
     const xeroInvoiceType = type === "ACCREC" ? Invoice.TypeEnum.ACCREC : Invoice.TypeEnum.ACCPAY;
-    const result = await createXeroInvoice(contactId, lineItems, xeroInvoiceType, reference, date);
+    const result = await createXeroInvoice(
+      contactId,
+      lineItems,
+      xeroInvoiceType,
+      reference,
+      date,
+      currencyCode,
+      currencyRate,
+    );
     if (result.isError) {
       return {
         content: [
@@ -75,6 +89,8 @@ const CreateInvoiceTool = CreateXeroTool(
             `Contact: ${invoice?.contact?.name}`,
             `Type: ${invoice?.type}`,
             `Date: ${invoice?.date}`,
+            invoice?.currencyCode ? `Currency: ${invoice.currencyCode}` : null,
+            invoice?.currencyRate ? `Currency Rate: ${invoice.currencyRate}` : null,
             `Total: ${invoice?.total}`,
             `Status: ${invoice?.status}`,
             deepLink ? `Link to view: ${deepLink}` : null,

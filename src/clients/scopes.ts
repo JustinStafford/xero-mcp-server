@@ -7,9 +7,9 @@
  * Deliberately absent:
  *  - `accounting.journals.read` — Advanced tier + certification only; requesting
  *    it fails the whole authorisation.
- *  - payroll write scopes — payroll is read-only here. Adding a payroll write
- *    tool later means re-authorising every organisation, so it is not requested
- *    speculatively.
+ *  - the remaining payroll write scopes (payruns, payslips, settings,
+ *    timesheets) — those areas stay read-only, and widening them later means
+ *    re-authorising every organisation, so they are not requested speculatively.
  */
 export const XERO_AUTH_SCOPES: string[] = [
   // OIDC + refresh tokens. offline_access is what makes tokens survive a
@@ -43,8 +43,12 @@ export const XERO_AUTH_SCOPES: string[] = [
   // remain Xero UI operations however this scope is granted.
   "assets",
 
-  // Payroll (read-only)
-  "payroll.employees.read",
+  // Payroll. Employees is read-write (`payroll.employees` covers both) at
+  // Blueshift's request; everything else is read-only. No tool here writes to an
+  // employee record today, so granting this widens consent ahead of use — it was
+  // asked for deliberately. Every connected organisation must re-authorise once
+  // for the new scope to take effect.
+  "payroll.employees",
   "payroll.payruns.read",
   "payroll.payslip.read",
   "payroll.settings.read",

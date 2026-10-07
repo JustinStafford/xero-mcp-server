@@ -3,24 +3,52 @@ import { XeroClientResponse } from "../types/tool-response.js";
 import { formatError } from "../helpers/format-error.js";
 import { Invoice } from "xero-node";
 import { getClientHeaders } from "../helpers/get-client-headers.js";
+import { dateRangeClauses, joinWhere } from "../helpers/xero-where.js";
 
-async function getInvoices(
-  invoiceNumbers: string[] | undefined,
-  contactIds: string[] | undefined,
-  page: number,
-): Promise<Invoice[]> {
+export interface ListInvoicesFilters {
+  page?: number;
+  contactIds?: string[];
+  invoiceNumbers?: string[];
+  statuses?: string[];
+  types?: string[];
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+/**
+ * Type and date range have no dedicated query parameters, so they go into the
+ * `where` clause. Statuses do have one, and are passed there instead.
+ */
+export const buildInvoiceWhere = (
+  filters: ListInvoicesFilters,
+): string | undefined => {
+  const clauses: string[] = [];
+
+  if (filters.types?.length) {
+    const typeClause = filters.types
+      .map((type) => `Type=="${type}"`)
+      .join(" OR ");
+    clauses.push(filters.types.length > 1 ? `(${typeClause})` : typeClause);
+  }
+
+  clauses.push(...dateRangeClauses("Date", filters.dateFrom, filters.dateTo));
+
+  return joinWhere(clauses);
+};
+
+async function getInvoices(filters: ListInvoicesFilters): Promise<Invoice[]> {
   await xeroClient.authenticate();
 
   const invoices = await xeroClient.accountingApi.getInvoices(
     xeroClient.tenantId,
     undefined, // ifModifiedSince
-    undefined, // where
+    buildInvoiceWhere(filters), // where
     "UpdatedDateUTC DESC", // order
     undefined, // iDs
-    invoiceNumbers, // invoiceNumbers
-    contactIds, // contactIDs
-    undefined, // statuses
-    page,
+    filters.invoiceNumbers, // invoiceNumbers
+    filters.contactIds, // contactIDs
+    filters.statuses, // statuses
+    filters.page ?? 1,
     false, // includeArchived
     false, // createdByMyApp
     undefined, // unitdp
@@ -36,12 +64,10 @@ async function getInvoices(
  * List all invoices from Xero
  */
 export async function listXeroInvoices(
-  page: number = 1,
-  contactIds?: string[],
-  invoiceNumbers?: string[],
+  filters: ListInvoicesFilters = {},
 ): Promise<XeroClientResponse<Invoice[]>> {
   try {
-    const invoices = await getInvoices(invoiceNumbers, contactIds, page);
+    const invoices = await getInvoices(filters);
 
     return {
       result: invoices,

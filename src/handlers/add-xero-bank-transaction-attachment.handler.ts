@@ -7,57 +7,56 @@ import {
   AttachmentSource,
   readAttachmentSource,
 } from "../helpers/read-attachment-source.js";
-import { describeInvoice, resolveInvoice } from "../helpers/resolve-invoice.js";
+import {
+  describeBankTransaction,
+  resolveBankTransaction,
+} from "../helpers/resolve-bank-transaction.js";
 import { XeroClientResponse } from "../types/tool-response.js";
 
-export interface AddedAttachment {
+export interface AddedBankTransactionAttachment {
   attachment: Attachment;
-  invoiceLabel: string;
+  transactionLabel: string;
   /** Read back from Xero after the upload, so "it worked" is not an assumption. */
   verified: boolean;
   uploadedBytes: number;
 }
 
 /**
- * Attach a file to a bill or invoice.
- *
- * The file can come from the server's own disk, an https URL, or base64 content —
- * a hosted server has no path the caller can name, so the latter two are what
- * make this usable from a remote client.
+ * Attach a receipt or other document to a spend-money or receive-money
+ * transaction.
  */
-export async function addXeroInvoiceAttachment(
-  invoiceNumberOrId: string,
+export async function addXeroBankTransactionAttachment(
+  bankTransactionId: string,
   source: AttachmentSource,
-  includeOnline: boolean = false,
-): Promise<XeroClientResponse<AddedAttachment>> {
+): Promise<XeroClientResponse<AddedBankTransactionAttachment>> {
   try {
     await xeroClient.authenticate();
 
     const { body, name } = await readAttachmentSource(source);
 
-    const invoice = await resolveInvoice(invoiceNumberOrId);
-    if (!invoice.invoiceID) {
-      throw new Error("Resolved invoice has no invoice ID.");
+    const transaction = await resolveBankTransaction(bankTransactionId);
+    if (!transaction.bankTransactionID) {
+      throw new Error("Resolved bank transaction has no ID.");
     }
 
-    const response = await xeroClient.accountingApi.createInvoiceAttachmentByFileName(
-      xeroClient.tenantId,
-      invoice.invoiceID,
-      name,
-      body,
-      includeOnline,
-      undefined, // idempotencyKey
-      getClientHeaders(),
-    );
+    const response =
+      await xeroClient.accountingApi.createBankTransactionAttachmentByFileName(
+        xeroClient.tenantId,
+        transaction.bankTransactionID,
+        name,
+        body,
+        undefined, // idempotencyKey
+        getClientHeaders(),
+      );
 
     const attachment = response.body.attachments?.[0];
     if (!attachment) {
       throw new Error("Attachment upload returned no attachment.");
     }
 
-    const stored = await xeroClient.accountingApi.getInvoiceAttachments(
+    const stored = await xeroClient.accountingApi.getBankTransactionAttachments(
       xeroClient.tenantId,
-      invoice.invoiceID,
+      transaction.bankTransactionID,
       getClientHeaders(),
     );
 
@@ -68,7 +67,7 @@ export async function addXeroInvoiceAttachment(
     return {
       result: {
         attachment,
-        invoiceLabel: describeInvoice(invoice),
+        transactionLabel: describeBankTransaction(transaction),
         verified,
         uploadedBytes: body.length,
       },
