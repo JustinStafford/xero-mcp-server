@@ -27,16 +27,18 @@ const lineItemSchema = z.object({
 
 const UpdateInvoiceTool = CreateXeroTool(
   "update-invoice",
-  "Update an invoice in Xero. Only works on draft invoices.\
-  All line items must be provided. Any line items not provided will be removed. Including existing line items.\
-  Do not modify line items that have not been specified by the user.\
+  "Update a DRAFT sales invoice (ACCREC) or a DRAFT supplier bill (ACCPAY) in Xero. \
+Only works on drafts; use get-invoice first to see the current state. \
+Fields you leave out keep their existing values, so a partial update is safe. \
+If you DO supply lineItems, they replace the whole set, so supply every line you want to keep.\
  When an invoice is updated, a deep link to the invoice in Xero is returned. \
  This deep link can be used to view the contact in Xero directly. \
  This link should be displayed to the user.",
   {
     invoiceId: z.string().describe("The ID of the invoice to update."),
     lineItems: z.array(lineItemSchema).optional().describe(
-      "All line items must be provided. Any line items not provided will be removed. Including existing line items. \
+      "Leave this out to keep the existing line items unchanged. If supplied, it REPLACES \
+      every line item on the invoice, so include the existing lines you want to keep. \
       Do not modify line items that have not been specified by the user",
     ),
     reference: z.string().optional().describe("A reference number for the invoice."),

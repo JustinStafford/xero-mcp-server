@@ -6,14 +6,20 @@ import ListInvoiceAttachmentsTool from "./list-invoice-attachments.tool.js";
 import ListAgedPayablesByContact from "./list-aged-payables-by-contact.tool.js";
 import ListAgedReceivablesByContact
   from "./list-aged-receivables-by-contact.tool.js";
+import ListBankTransactionAttachmentsTool
+  from "./list-bank-transaction-attachments.tool.js";
 import ListBankTransactionsTool from "./list-bank-transactions.tool.js";
+import ListBatchPaymentsTool from "./list-batch-payments.tool.js";
 import ListContactsTool from "./list-contacts.tool.js";
 import ListCreditNotesTool from "./list-credit-notes.tool.js";
+import ListCurrenciesTool from "./list-currencies.tool.js";
 import ListInvoicesTool from "./list-invoices.tool.js";
 import ListItemsTool from "./list-items.tool.js";
 import ListManualJournalsTool from "./list-manual-journals.tool.js";
 import ListOrganisationDetailsTool from "./list-organisation-details.tool.js";
 import ListPaymentsTool from "./list-payments.tool.js";
+import ListPayrollAuEmployeeLeaveBalancesTool
+  from "./list-payroll-au-employee-leave-balances.tool.js";
 import ListPayrollAuEmployeesTool from "./list-payroll-au-employees.tool.js";
 import ListPayrollPayRunsTool from "./list-payroll-pay-runs.tool.js";
 import ListProfitAndLossTool from "./list-profit-and-loss.tool.js";
@@ -59,6 +65,9 @@ export const ListTools = [
   ListContactGroupsTool,
   ListTrackingCategoriesTool,
   ListInvoiceAttachmentsTool,
+  ListBankTransactionAttachmentsTool,
+  ListBatchPaymentsTool,
+  ListCurrenciesTool,
 
   // Fixed assets
   ListAssetsTool,
@@ -67,5 +76,6 @@ export const ListTools = [
 
   // Australian payroll
   ListPayrollAuEmployeesTool,
+  ListPayrollAuEmployeeLeaveBalancesTool,
   ListPayrollPayRunsTool,
 ];

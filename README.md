@@ -162,6 +162,14 @@ payroll.timesheets
 - `list-aged-payables-by-contact`: Retrieves aged payables for a contact
 - `list-contact-groups`: Retrieve a list of contact groups
 - `list-tracking-categories`: Retrieve a list of tracking categories
+- `list-currencies`: Retrieve the currencies an organisation has enabled
+- `list-invoice-attachments`: Retrieve the files attached to an invoice or bill
+- `list-bank-transaction-attachments`: Retrieve the files attached to a bank transaction
+- `list-batch-payments`: Retrieve a list of batch payments
+- `get-invoice`: Retrieve one invoice or bill in full, including its line items
+- `get-invoice-attachment`: Download a file attached to an invoice or bill
+- `get-bank-transaction-attachment`: Download a file attached to a bank transaction
+- `get-batch-payment`: Retrieve one batch payment and the payments it contains
 - `create-bank-transaction`: Create a new bank transaction
 - `create-contact`: Create a new contact
 - `create-credit-note`: Create a new credit note
@@ -173,6 +181,10 @@ payroll.timesheets
 - `create-payroll-timesheet`: Create a new Payroll Timesheet
 - `create-tracking-category`: Create a new tracking category
 - `create-tracking-option`: Create a new tracking option
+- `create-batch-payment`: Create a batch payment for authorised supplier bills
+- `add-invoice-attachment`: Attach a file to an invoice or bill
+- `add-bank-transaction-attachment`: Attach a file to a bank transaction
+- `set-invoice-expected-payment-date`: Set ExpectedPaymentDate on unpaid authorised sales invoices, in bulk
 - `update-bank-transaction`: Update an existing bank transaction
 - `update-contact`: Update an existing contact
 - `update-invoice`: Update an existing draft invoice
@@ -188,6 +200,24 @@ payroll.timesheets
 - `add-payroll-timesheet-line`: Add new line on an existing Payroll Timesheet
 - `delete-payroll-timesheet`: Delete an existing Payroll Timesheet
 - `get-payroll-timesheet`: Retrieve an existing Payroll Timesheet
+
+### Xero API limits worth knowing
+
+These are limits in Xero's API, not gaps in this server. No tool here can work around them.
+
+- **ABA bank files cannot be produced or downloaded.** `create-batch-payment` creates the
+  batch payment record. The ABA export is only available in the Xero web interface.
+- **Multi-currency batch payments cannot be created.** Every bill in a batch must be in the
+  bank account's own currency. Xero itself creates multi-currency batches elsewhere, so one
+  read back from the API may be multi-currency even though one cannot be written.
+- **A currency must be enabled on the organisation before it can be used.** Adding one is a
+  Xero settings change. `list-currencies` shows what an organisation accepts.
+- **`ExpectedPaymentDate` cannot be set inside a locked period.** The Xero web interface
+  allows this edit; the API refuses it. The lock date has to be moved first.
+- **Australian payroll has no leave-balance endpoint.** Balances arrive on the full employee
+  record, so `list-payroll-employee-leave-balances` costs one API call per employee and is
+  capped per call to stay inside the 60-calls-a-minute limit.
+- **Attachments are capped at 3.5MB.**
 
 For detailed API documentation, please refer to the [MCP Protocol Specification](https://modelcontextprotocol.io/).
 
