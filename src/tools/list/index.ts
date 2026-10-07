@@ -9,7 +9,6 @@ import ListAgedReceivablesByContact
 import ListBankTransactionAttachmentsTool
   from "./list-bank-transaction-attachments.tool.js";
 import ListBankTransactionsTool from "./list-bank-transactions.tool.js";
-import ListBatchPaymentsTool from "./list-batch-payments.tool.js";
 import ListContactsTool from "./list-contacts.tool.js";
 import ListCreditNotesTool from "./list-credit-notes.tool.js";
 import ListCurrenciesTool from "./list-currencies.tool.js";
@@ -66,7 +65,6 @@ export const ListTools = [
   ListTrackingCategoriesTool,
   ListInvoiceAttachmentsTool,
   ListBankTransactionAttachmentsTool,
-  ListBatchPaymentsTool,
   ListCurrenciesTool,
 
   // Fixed assets

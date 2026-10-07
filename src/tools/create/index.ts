@@ -1,7 +1,6 @@
 import AddBankTransactionAttachmentTool from "./add-bank-transaction-attachment.tool.js";
 import AddInvoiceAttachmentTool from "./add-invoice-attachment.tool.js";
 import CreateAccountTool from "./create-account.tool.js";
-import CreateBatchPaymentTool from "./create-batch-payment.tool.js";
 import CreateAssetTool from "./create-asset.tool.js";
 import CreateAssetTypeTool from "./create-asset-type.tool.js";
 import CreateBankTransactionTool from "./create-bank-transaction.tool.js";
@@ -22,7 +21,6 @@ export const CreateTools = [
   CreateAssetTypeTool,
   AddInvoiceAttachmentTool,
   AddBankTransactionAttachmentTool,
-  CreateBatchPaymentTool,
   CreateContactTool,
   CreateCreditNoteTool,
   CreateManualJournalTool,

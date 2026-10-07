@@ -165,11 +165,9 @@ payroll.timesheets
 - `list-currencies`: Retrieve the currencies an organisation has enabled
 - `list-invoice-attachments`: Retrieve the files attached to an invoice or bill
 - `list-bank-transaction-attachments`: Retrieve the files attached to a bank transaction
-- `list-batch-payments`: Retrieve a list of batch payments
 - `get-invoice`: Retrieve one invoice or bill in full, including its line items
 - `get-invoice-attachment`: Download a file attached to an invoice or bill
 - `get-bank-transaction-attachment`: Download a file attached to a bank transaction
-- `get-batch-payment`: Retrieve one batch payment and the payments it contains
 - `create-bank-transaction`: Create a new bank transaction
 - `create-contact`: Create a new contact
 - `create-credit-note`: Create a new credit note
@@ -181,7 +179,6 @@ payroll.timesheets
 - `create-payroll-timesheet`: Create a new Payroll Timesheet
 - `create-tracking-category`: Create a new tracking category
 - `create-tracking-option`: Create a new tracking option
-- `create-batch-payment`: Create a batch payment for authorised supplier bills
 - `add-invoice-attachment`: Attach a file to an invoice or bill
 - `add-bank-transaction-attachment`: Attach a file to a bank transaction
 - `set-invoice-expected-payment-date`: Set ExpectedPaymentDate on unpaid authorised sales invoices, in bulk
@@ -205,11 +202,14 @@ payroll.timesheets
 
 These are limits in Xero's API, not gaps in this server. No tool here can work around them.
 
-- **ABA bank files cannot be produced or downloaded.** `create-batch-payment` creates the
-  batch payment record. The ABA export is only available in the Xero web interface.
+- **ABA bank files cannot be produced or downloaded.** The BatchPayments endpoint can create
+  the batch payment *record*, but the ABA export exists only in the Xero web interface and has
+  no API equivalent. Because of that, and because a batch payment is AUTHORISED the moment it
+  is created and cannot be deleted through the API, **no batch-payment tools are registered
+  here**. Batch payments stay a Xero web interface task.
 - **Multi-currency batch payments cannot be created.** Every bill in a batch must be in the
-  bank account's own currency. Xero itself creates multi-currency batches elsewhere, so one
-  read back from the API may be multi-currency even though one cannot be written.
+  bank account's own currency. This matters for foreign-currency bills created with
+  `currencyCode`: they cannot go into an API-created batch.
 - **A currency must be enabled on the organisation before it can be used.** Adding one is a
   Xero settings change. `list-currencies` shows what an organisation accepts.
 - **`ExpectedPaymentDate` cannot be set inside a locked period.** The Xero web interface

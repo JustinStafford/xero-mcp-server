@@ -45,10 +45,18 @@ describe("registered tools", () => {
         "add-bank-transaction-attachment",
         "list-bank-transaction-attachments",
         "get-bank-transaction-attachment",
-        "create-batch-payment",
-        "list-batch-payments",
-        "get-batch-payment",
       ]),
     );
+  });
+
+  it("do not expose batch payments", () => {
+    // Deliberately out of scope: the Xero API cannot produce the ABA file, and a
+    // batch payment is AUTHORISED on creation and cannot be deleted through the
+    // API. The implementation is in git history at eeef9ea if it is revived.
+    const batchTools = allTools
+      .map((tool) => tool.name)
+      .filter((name) => name.includes("batch-payment"));
+
+    expect(batchTools).toEqual([]);
   });
 });
