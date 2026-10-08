@@ -125,8 +125,10 @@ accounting.manualjournals.read
 accounting.reports.read (Deprecated)
 accounting.reports.aged.read
 accounting.reports.balancesheet.read
+accounting.reports.budgetsummary.read
 accounting.reports.profitandloss.read
 accounting.reports.trialbalance.read
+accounting.budgets.read
 accounting.contacts 
 accounting.settings 
 payroll.settings 
@@ -150,6 +152,9 @@ payroll.timesheets
 - `list-payments`: Retrieve a list of payments
 - `list-trial-balance`: Retrieve a trial balance report
 - `list-bank-transactions`: Retrieve a list of bank account transactions
+- `list-budgets`: Retrieve a list of budgets (read-only — Xero's API has no budget create or update)
+- `get-budget`: Retrieve one budget with its account lines and per-period amounts
+- `list-budget-summary`: Retrieve a budget summary report
 - `list-payroll-employees`: Retrieve a list of Payroll Employees
 - `list-report-balance-sheet`: Retrieve a balance sheet report
 - `list-payroll-employee-leave`: Retrieve a Payroll Employee's leave records
