@@ -35,8 +35,14 @@ export const XERO_AUTH_SCOPES: string[] = [
   // Reports — each is a separate granular scope; omitting one 403s that report
   "accounting.reports.aged.read",
   "accounting.reports.balancesheet.read",
+  "accounting.reports.budgetsummary.read",
   "accounting.reports.profitandloss.read",
   "accounting.reports.trialbalance.read",
+
+  // Budgets. Read-only by necessity: `accounting.budgets.read` is the only
+  // budget scope Xero defines, and /Budgets accepts GET alone. Creating and
+  // editing budgets stays a Xero UI operation (Business → Budget manager).
+  "accounting.budgets.read",
 
   // Fixed asset register. Xero's Assets API is create-and-read only: there is
   // no endpoint to update, delete, dispose or depreciate an asset, so those

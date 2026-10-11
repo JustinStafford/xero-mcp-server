@@ -9,6 +9,8 @@ import ListAgedReceivablesByContact
 import ListBankTransactionAttachmentsTool
   from "./list-bank-transaction-attachments.tool.js";
 import ListBankTransactionsTool from "./list-bank-transactions.tool.js";
+import ListBudgetSummaryTool from "./list-budget-summary.tool.js";
+import ListBudgetsTool from "./list-budgets.tool.js";
 import ListContactsTool from "./list-contacts.tool.js";
 import ListCreditNotesTool from "./list-credit-notes.tool.js";
 import ListCurrenciesTool from "./list-currencies.tool.js";
@@ -66,6 +68,10 @@ export const ListTools = [
   ListInvoiceAttachmentsTool,
   ListBankTransactionAttachmentsTool,
   ListCurrenciesTool,
+
+  // Budgets — read-only; Xero's API has no budget write operation
+  ListBudgetsTool,
+  ListBudgetSummaryTool,
 
   // Fixed assets
   ListAssetsTool,
