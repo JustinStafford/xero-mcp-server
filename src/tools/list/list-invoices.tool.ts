@@ -5,13 +5,13 @@ import { formatLineItem } from "../../helpers/format-line-item.js";
 
 const ListInvoicesTool = CreateXeroTool(
   "list-invoices",
-  "List invoices in Xero. This includes Draft, Submitted, and Paid invoices. \
-  Ask the user if they want to see invoices for a specific contact, \
-  invoice number, or to see all invoices before running. \
+  "List sales invoices (ACCREC) and supplier bills (ACCPAY) in Xero. \
+  Filter with statuses and types rather than paging through everything — \
+  for example types=['ACCPAY'] and statuses=['DRAFT'] for draft supplier bills. \
   Ask the user if they want the next page of invoices after running this tool \
   if 10 invoices are returned. \
   If they want the next page, call this tool again with the next page number \
-  and the contact or invoice number if one was provided in the previous call.",
+  and the same filters.",
   {
     page: z.number(),
     contactIds: z.array(z.string()).optional(),
@@ -19,9 +19,37 @@ const ListInvoicesTool = CreateXeroTool(
       .array(z.string())
       .optional()
       .describe("If provided, invoice line items will also be returned"),
+    statuses: z
+      .array(z.enum(["DRAFT", "SUBMITTED", "AUTHORISED", "PAID", "VOIDED", "DELETED"]))
+      .optional()
+      .describe(
+        "Only return invoices with these statuses. Omit to return every status.",
+      ),
+    types: z
+      .array(z.enum(["ACCREC", "ACCPAY"]))
+      .optional()
+      .describe(
+        "ACCREC for sales invoices, ACCPAY for supplier bills. Omit to return both.",
+      ),
+    dateFrom: z
+      .string()
+      .optional()
+      .describe("Only return invoices dated on or after this ISO date (YYYY-MM-DD)."),
+    dateTo: z
+      .string()
+      .optional()
+      .describe("Only return invoices dated on or before this ISO date (YYYY-MM-DD)."),
   },
-  async ({ page, contactIds, invoiceNumbers }) => {
-    const response = await listXeroInvoices(page, contactIds, invoiceNumbers);
+  async ({ page, contactIds, invoiceNumbers, statuses, types, dateFrom, dateTo }) => {
+    const response = await listXeroInvoices({
+      page,
+      contactIds,
+      invoiceNumbers,
+      statuses,
+      types,
+      dateFrom,
+      dateTo,
+    });
     if (response.error !== null) {
       return {
         content: [
@@ -55,6 +83,12 @@ const ListInvoicesTool = CreateXeroTool(
               : null,
             invoice.date ? `Date: ${invoice.date}` : null,
             invoice.dueDate ? `Due Date: ${invoice.dueDate}` : null,
+            invoice.expectedPaymentDate
+              ? `Expected Payment Date: ${invoice.expectedPaymentDate}`
+              : null,
+            invoice.plannedPaymentDate
+              ? `Planned Payment Date: ${invoice.plannedPaymentDate}`
+              : null,
             invoice.lineAmountTypes
               ? `Line Amount Types: ${invoice.lineAmountTypes}`
               : null,

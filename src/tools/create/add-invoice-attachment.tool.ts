@@ -2,13 +2,16 @@ import { z } from "zod";
 
 import { addXeroInvoiceAttachment } from "../../handlers/add-xero-invoice-attachment.handler.js";
 import { CreateXeroTool } from "../../helpers/create-xero-tool.js";
+import {
+  ATTACHMENT_SOURCE_DESCRIPTION,
+  attachmentSourceSchema,
+} from "../../helpers/attachment-source-schema.js";
 
 const AddInvoiceAttachmentTool = CreateXeroTool(
   "add-invoice-attachment",
-  "Attach a file to a bill or an invoice. In Xero a bill and a sales invoice are \
-both invoices, so this covers both. \
-The file is read from the filesystem of the machine running this server, so it must \
-already be saved to disk — a file in the conversation is not reachable. Maximum 3.5MB.",
+  `Attach a file to a bill or an invoice. In Xero a bill and a sales invoice are \
+both invoices, so this covers both. ${ATTACHMENT_SOURCE_DESCRIPTION} \
+The attachment is read back from Xero after the upload to confirm it is stored.`,
   {
     invoiceNumberOrId: z
       .string()
@@ -17,18 +20,7 @@ already be saved to disk — a file in the conversation is not reachable. Maximu
 or its Xero invoice ID. Numbers are organisation-specific and resolved within the \
 organisation named in the organisation argument.",
       ),
-    filePath: z
-      .string()
-      .describe(
-        "Absolute path to the file on the machine running this server, e.g. \
-'/Users/me/Downloads/supplier-invoice.pdf'.",
-      ),
-    fileName: z
-      .string()
-      .optional()
-      .describe(
-        "Optional name to store the file under in Xero. Defaults to the file's own name.",
-      ),
+    ...attachmentSourceSchema,
     includeOnline: z
       .boolean()
       .optional()
@@ -38,12 +30,18 @@ CUSTOMER sees. Defaults to false. Only set true when the user has asked for the 
 attachment to be visible to the customer.",
       ),
   },
-  async ({ invoiceNumberOrId, filePath, fileName, includeOnline }) => {
+  async ({
+    invoiceNumberOrId,
+    filePath,
+    fileUrl,
+    fileBase64,
+    fileName,
+    includeOnline,
+  }) => {
     const response = await addXeroInvoiceAttachment(
       invoiceNumberOrId,
-      filePath,
+      { filePath, fileUrl, fileBase64, fileName },
       includeOnline ?? false,
-      fileName,
     );
 
     if (response.isError) {
@@ -57,7 +55,7 @@ attachment to be visible to the customer.",
       };
     }
 
-    const { attachment, invoiceLabel } = response.result;
+    const { attachment, invoiceLabel, verified, uploadedBytes } = response.result;
 
     return {
       content: [
@@ -66,9 +64,13 @@ attachment to be visible to the customer.",
           text: [
             `Attached to ${invoiceLabel}`,
             `  File: ${attachment.fileName}`,
-            `  Size: ${attachment.contentLength} bytes`,
+            `  Size: ${attachment.contentLength ?? uploadedBytes} bytes`,
             attachment.mimeType ? `  Type: ${attachment.mimeType}` : null,
             `  Visible on the online invoice: ${attachment.includeOnline ? "yes" : "no"}`,
+            verified
+              ? "  Verified: the attachment is stored on the record in Xero."
+              : "  Verified: NO — Xero accepted the upload but the attachment did not \
+come back when the record was read again. Check it in Xero before relying on it.",
           ]
             .filter(Boolean)
             .join("\n"),

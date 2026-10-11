@@ -1,3 +1,4 @@
+import SetInvoiceExpectedPaymentDateTool from "./set-invoice-expected-payment-date.tool.js";
 import UpdateAccountTool from "./update-account.tool.js";
 import UpdateBankTransactionTool from "./update-bank-transaction.tool.js";
 import UpdateContactTool from "./update-contact.tool.js";
@@ -15,6 +16,7 @@ export const UpdateTools = [
   UpdateContactTool,
   UpdateCreditNoteTool,
   UpdateInvoiceTool,
+  SetInvoiceExpectedPaymentDateTool,
   UpdateManualJournalTool,
   UpdateQuoteTool,
   UpdateItemTool,

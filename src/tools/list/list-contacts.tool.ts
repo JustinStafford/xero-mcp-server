@@ -1,5 +1,6 @@
 import { listXeroContacts } from "../../handlers/list-xero-contacts.handler.js";
 import { CreateXeroTool } from "../../helpers/create-xero-tool.js";
+import { formatContactBankDetails } from "../../helpers/contact-bank-details.js";
 import { z } from "zod";
 
 const ListContactsTool = CreateXeroTool(
@@ -10,10 +11,13 @@ const ListContactsTool = CreateXeroTool(
       If not provided, the first page will be returned. If 100 contacts are returned, \
       call this tool again with the next page number."),
     searchTerm: z.string().optional().describe("Search parameter that performs a case-insensitive text search across the Name, FirstName, LastName, ContactNumber and EmailAddress fields"),
+    includeBankDetails: z.boolean().optional().describe("Set true to also return each contact's bank details, \
+      including whether batch payment bank details are on file. Use this to find suppliers that cannot yet be \
+      paid in a batch payment. Returns more data per contact, so leave it off unless bank details are wanted."),
   },
   async (params) => {
-    const { page, searchTerm } = params;
-    const response = await listXeroContacts(page, searchTerm);
+    const { page, searchTerm, includeBankDetails } = params;
+    const response = await listXeroContacts(page, searchTerm, includeBankDetails);
 
     if (response.isError) {
       return {
@@ -68,6 +72,7 @@ const ListContactsTool = CreateXeroTool(
             contact.contactGroups?.length
               ? `Groups: ${contact.contactGroups.map((g) => g.name).join(", ")}`
               : null,
+            ...(includeBankDetails ? formatContactBankDetails(contact) : []),
             contact.hasAttachments ? "Has Attachments: Yes" : null,
             contact.hasValidationErrors ? "Has Validation Errors: Yes" : null,
           ]

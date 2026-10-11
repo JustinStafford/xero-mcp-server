@@ -3,25 +3,45 @@ import { XeroClientResponse } from "../types/tool-response.js";
 import { formatError } from "../helpers/format-error.js";
 import { Contact, Phone } from "xero-node";
 import { getClientHeaders } from "../helpers/get-client-headers.js";
+import {
+  BATCH_PAYMENT_DETAILS_MAX_LENGTH,
+  ContactBatchPaymentsInput,
+} from "./update-xero-contact.handler.js";
+
+export interface CreateContactInput {
+  name: string;
+  email?: string;
+  phone?: string;
+  bankAccountDetails?: string;
+  batchPayments?: ContactBatchPaymentsInput;
+}
 
 async function createContact(
-  name: string,
-  email?: string,
-  phone?: string,
+  input: CreateContactInput,
 ): Promise<Contact | undefined> {
   await xeroClient.authenticate();
 
+  const details = input.batchPayments?.details;
+  if (details !== undefined && details.length > BATCH_PAYMENT_DETAILS_MAX_LENGTH) {
+    throw new Error(
+      `Bank reference "${details}" is ${details.length} characters. Xero allows at most ` +
+        `${BATCH_PAYMENT_DETAILS_MAX_LENGTH} outside New Zealand, so shorten it before saving.`,
+    );
+  }
+
   const contact: Contact = {
-    name,
-    emailAddress: email,
-    phones: phone
+    name: input.name,
+    emailAddress: input.email,
+    phones: input.phone
       ? [
           {
-            phoneNumber: phone,
+            phoneNumber: input.phone,
             phoneType: Phone.PhoneTypeEnum.MOBILE,
           },
         ]
       : undefined,
+    bankAccountDetails: input.bankAccountDetails,
+    batchPayments: input.batchPayments,
   };
 
   const response = await xeroClient.accountingApi.createContacts(
@@ -38,15 +58,13 @@ async function createContact(
 }
 
 /**
- * Create a new invoice in Xero
+ * Create a new contact in Xero
  */
 export async function createXeroContact(
-  name: string,
-  email?: string,
-  phone?: string,
+  input: CreateContactInput,
 ): Promise<XeroClientResponse<Contact>> {
   try {
-    const createdContact = await createContact(name, email, phone);
+    const createdContact = await createContact(input);
 
     if (!createdContact) {
       throw new Error("Contact creation failed.");
