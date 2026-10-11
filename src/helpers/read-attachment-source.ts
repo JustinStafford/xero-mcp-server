@@ -108,17 +108,8 @@ const readFromDisk = (filePath: string, fileName?: string): AttachmentPayload =>
   };
 };
 
-const readFromUrl = async (
-  fileUrl: string,
-  fileName?: string,
-): Promise<AttachmentPayload> => {
-  let url: URL;
-  try {
-    url = new URL(fileUrl);
-  } catch {
-    throw new Error(`"${fileUrl}" is not a valid URL.`);
-  }
-
+/** Reject anything that is not an https link to a publicly routable host. */
+const assertFetchable = (url: URL): void => {
   if (url.protocol !== "https:") {
     throw new Error(
       `fileUrl must be an https link, received "${url.protocol}//".`,
@@ -131,8 +122,62 @@ const readFromUrl = async (
         "not reachable through this tool.",
     );
   }
+};
 
-  const response = await fetch(url, { redirect: "follow" });
+/** Enough for a CDN chain, few enough to bound the work. */
+export const MAX_ATTACHMENT_REDIRECTS = 5;
+
+/**
+ * Follow redirects one hop at a time, re-checking the host each time.
+ *
+ * Letting fetch follow them would check only the first host, so a public URL
+ * could redirect into the network the server is hosted inside.
+ */
+const fetchFollowingRedirects = async (
+  start: URL,
+): Promise<{ response: Response; url: URL }> => {
+  let url = start;
+
+  for (let hop = 0; ; hop += 1) {
+    const response = await fetch(url, { redirect: "manual" });
+
+    const location = response.headers.get("location");
+    if (response.status < 300 || response.status >= 400 || !location) {
+      return { response, url };
+    }
+
+    if (hop >= MAX_ATTACHMENT_REDIRECTS) {
+      throw new Error(
+        `${start.href} redirected more than ${MAX_ATTACHMENT_REDIRECTS} times.`,
+      );
+    }
+
+    let next: URL;
+    try {
+      next = new URL(location, url);
+    } catch {
+      throw new Error(`${url.href} redirected to an invalid URL: "${location}".`);
+    }
+
+    assertFetchable(next);
+    url = next;
+  }
+};
+
+const readFromUrl = async (
+  fileUrl: string,
+  fileName?: string,
+): Promise<AttachmentPayload> => {
+  let start: URL;
+  try {
+    start = new URL(fileUrl);
+  } catch {
+    throw new Error(`"${fileUrl}" is not a valid URL.`);
+  }
+
+  assertFetchable(start);
+
+  const { response, url } = await fetchFollowingRedirects(start);
 
   if (!response.ok) {
     throw new Error(
