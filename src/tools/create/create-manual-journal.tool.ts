@@ -3,7 +3,8 @@ import { CreateXeroTool } from "../../helpers/create-xero-tool.js";
 import { createXeroManualJournal } from "../../handlers/create-xero-manual-journal.handler.js";
 import { DeepLinkType, getDeepLink } from "../../helpers/get-deeplink.js";
 import { ensureError } from "../../helpers/ensure-error.js";
-import { LineAmountTypes, ManualJournal } from "xero-node";
+import { mapLineAmountType } from "../../helpers/map-line-amount-type.js";
+import { ManualJournal } from "xero-node";
 
 const CreateManualJournalTool = CreateXeroTool(
   "create-manual-journal",
@@ -74,7 +75,7 @@ be posted.",
         args.narration,
         args.manualJournalLines,
         args.date,
-        args.lineAmountTypes as LineAmountTypes | undefined,
+        mapLineAmountType(args.lineAmountTypes),
         // Default to DRAFT. A mis-posted journal should be a deletion, not a
         // restatement — so posting must be an explicit choice, never a default.
         (args.status ?? "DRAFT") as unknown as ManualJournal.StatusEnum,

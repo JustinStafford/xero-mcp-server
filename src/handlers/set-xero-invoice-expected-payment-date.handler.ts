@@ -186,6 +186,7 @@ export async function setXeroInvoiceExpectedPaymentDate(
       false, // summarizeErrors
       undefined, // unitdp
       undefined, // idempotencyKey
+      undefined, // allowBackorders
       getClientHeaders(),
     );
 

@@ -64,6 +64,7 @@ async function updateInvoice(
     }, // invoices
     undefined, // unitdp
     undefined, // idempotencyKey
+    undefined, // allowBackorders
     getClientHeaders(), // options
   );
 
