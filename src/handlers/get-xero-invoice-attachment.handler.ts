@@ -1,29 +1,22 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import { xeroClient } from "../clients/xero-client.js";
+import {
+  DeliveredAttachment,
+  deliverAttachment,
+} from "../helpers/deliver-attachment.js";
 import { formatError } from "../helpers/format-error.js";
 import { getClientHeaders } from "../helpers/get-client-headers.js";
 import { describeInvoice, resolveInvoice } from "../helpers/resolve-invoice.js";
 import { XeroClientResponse } from "../types/tool-response.js";
 
-export interface DownloadedAttachment {
-  savedTo: string;
-  bytes: number;
-  fileName: string;
+export interface DownloadedAttachment extends DeliveredAttachment {
   invoiceLabel: string;
 }
 
-/**
- * Download an attachment from a bill or invoice to a local file.
- *
- * Written to disk rather than returned inline: a PDF bill is binary and would
- * be useless — and enormous — in a tool response.
- */
+/** Retrieve an attachment from a bill or invoice, for the response or a local file. */
 export async function getXeroInvoiceAttachment(
   invoiceNumberOrId: string,
   fileName: string,
-  outputPath: string,
+  outputPath?: string,
 ): Promise<XeroClientResponse<DownloadedAttachment>> {
   try {
     await xeroClient.authenticate();
@@ -60,21 +53,14 @@ export async function getXeroInvoiceAttachment(
       getClientHeaders(),
     );
 
-    // Resolve a directory target to a file inside it, so callers can pass
-    // either a directory or a full path.
-    let target = path.resolve(outputPath);
-    if (fs.existsSync(target) && fs.statSync(target).isDirectory()) {
-      target = path.join(target, match.fileName ?? "attachment");
-    }
-
-    fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(target, response.body);
-
     return {
       result: {
-        savedTo: target,
-        bytes: response.body.length,
-        fileName: match.fileName ?? "attachment",
+        ...deliverAttachment(
+          response.body,
+          match.fileName ?? "attachment",
+          match.mimeType ?? "application/octet-stream",
+          outputPath,
+        ),
         invoiceLabel: describeInvoice(invoice),
       },
       isError: false,

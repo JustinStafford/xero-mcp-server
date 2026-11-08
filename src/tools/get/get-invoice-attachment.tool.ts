@@ -1,12 +1,17 @@
 import { z } from "zod";
 
 import { getXeroInvoiceAttachment } from "../../handlers/get-xero-invoice-attachment.handler.js";
+import {
+  attachmentOutputSchema,
+  describeAttachmentDelivery,
+} from "../../helpers/attachment-source-schema.js";
 import { CreateXeroTool } from "../../helpers/create-xero-tool.js";
+import { deliveredAttachmentContent } from "../../helpers/deliver-attachment.js";
 
 const GetInvoiceAttachmentTool = CreateXeroTool(
   "get-invoice-attachment",
-  "Download a file attached to a bill or an invoice and save it to disk on the machine \
-running this server. Use list-invoice-attachments first to see the available file names.",
+  `Retrieve a file attached to a bill or an invoice. ${describeAttachmentDelivery()} \
+Use list-invoice-attachments first to see the available file names.`,
   {
     invoiceNumberOrId: z
       .string()
@@ -17,12 +22,7 @@ invoice ID.",
     fileName: z
       .string()
       .describe("Name of the attachment to download, as shown by list-invoice-attachments"),
-    outputPath: z
-      .string()
-      .describe(
-        "Where to save the file: either a full path, or an existing directory to save it \
-into under its own name.",
-      ),
+    ...attachmentOutputSchema(),
   },
   async ({ invoiceNumberOrId, fileName, outputPath }) => {
     const response = await getXeroInvoiceAttachment(
@@ -42,19 +42,11 @@ into under its own name.",
       };
     }
 
-    const result = response.result;
-
     return {
-      content: [
-        {
-          type: "text" as const,
-          text: [
-            `Downloaded ${result.fileName} from ${result.invoiceLabel}`,
-            `  Saved to: ${result.savedTo}`,
-            `  Size: ${result.bytes} bytes`,
-          ].join("\n"),
-        },
-      ],
+      content: deliveredAttachmentContent(
+        response.result,
+        response.result.invoiceLabel,
+      ),
     };
   },
 );

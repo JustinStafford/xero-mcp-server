@@ -2,15 +2,13 @@ import { z } from "zod";
 
 import { addXeroBankTransactionAttachment } from "../../handlers/add-xero-bank-transaction-attachment.handler.js";
 import { CreateXeroTool } from "../../helpers/create-xero-tool.js";
-import {
-  ATTACHMENT_SOURCE_DESCRIPTION,
-  attachmentSourceSchema,
-} from "../../helpers/attachment-source-schema.js";
+import { describeAttachmentSources } from "../../helpers/attachment-access.js";
+import { attachmentSourceSchema } from "../../helpers/attachment-source-schema.js";
 
 const AddBankTransactionAttachmentTool = CreateXeroTool(
   "add-bank-transaction-attachment",
   `Attach a file — typically a PDF receipt or invoice — to a bank transaction. This \
-covers spend-money and receive-money transactions. ${ATTACHMENT_SOURCE_DESCRIPTION} \
+covers spend-money and receive-money transactions. ${describeAttachmentSources()} \
 The attachment is read back from Xero after the upload to confirm it is stored.`,
   {
     bankTransactionId: z
@@ -18,7 +16,7 @@ The attachment is read back from Xero after the upload to confirm it is stored.`
       .describe(
         "The Xero bank transaction ID. Use list-bank-transactions to find it.",
       ),
-    ...attachmentSourceSchema,
+    ...attachmentSourceSchema(),
   },
   async ({ bankTransactionId, filePath, fileUrl, fileBase64, fileName }) => {
     const response = await addXeroBankTransactionAttachment(bankTransactionId, {

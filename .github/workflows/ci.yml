@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+      - name: Install (no dependency scripts)
+        run: npm ci --ignore-scripts
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: ./node_modules/.bin/tsc --noEmit
+      - name: Unit tests
+        run: npm test

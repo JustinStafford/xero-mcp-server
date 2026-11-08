@@ -1,6 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import {
+  describeAttachmentSources,
+  fileUrlsEnabled,
+  localFilesEnabled,
+} from "./attachment-access.js";
+
 /**
  * Xero rejects requests above 3.5MB. Checking locally turns an opaque
  * transport failure into a message that says what to do about it.
@@ -213,11 +219,20 @@ const readFromBase64 = (
   }
 
   // Tolerates a data: URL, which is how a browser-side encoder usually produces one.
-  const payload = fileBase64.replace(/^data:[^;]*;base64,/, "").trim();
+  const payload = fileBase64
+    .replace(/^data:[^;]*;base64,/, "")
+    .replace(/\s+/g, "");
+
   const body = Buffer.from(payload, "base64");
 
   if (body.length === 0) {
     throw new Error("fileBase64 decoded to an empty file. Check the encoding.");
+  }
+
+  // Buffer.from skips what it can't decode, so a mangled upload would otherwise
+  // attach a corrupt file and report success.
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(payload)) {
+    throw new Error("fileBase64 is not valid base64. Check the encoding.");
   }
 
   if (body.length > MAX_ATTACHMENT_BYTES) {
@@ -230,9 +245,9 @@ const readFromBase64 = (
 /**
  * Resolve a file supplied as a local path, an https URL, or base64 content.
  *
- * A local path only works when the server runs next to the person using it. A
- * hosted server has no path the caller can name and no way to receive a file on
- * disk, so the other two routes are what make attachments work from ChatGPT.
+ * Paths and URLs only work where they've been switched on (attachment-access).
+ * Checked here as well as in the tool schemas, so a call that reaches this
+ * another way is refused too.
  */
 export const readAttachmentSource = async (
   source: AttachmentSource,
@@ -244,10 +259,7 @@ export const readAttachmentSource = async (
   ].filter(Boolean);
 
   if (supplied.length === 0) {
-    throw new Error(
-      "No file supplied. Give exactly one of filePath (local server only), fileUrl " +
-        "(an https link), or fileBase64 (the file's contents, with fileName).",
-    );
+    throw new Error(`No file supplied. ${describeAttachmentSources()}`);
   }
 
   if (supplied.length > 1) {
@@ -257,10 +269,20 @@ export const readAttachmentSource = async (
   }
 
   if (source.filePath) {
+    if (!localFilesEnabled()) {
+      throw new Error(
+        "This server doesn't read files from its own disk. Supply fileBase64 with fileName.",
+      );
+    }
     return readFromDisk(source.filePath, source.fileName);
   }
 
   if (source.fileUrl) {
+    if (!fileUrlsEnabled()) {
+      throw new Error(
+        "This server doesn't download files from links. Supply fileBase64 with fileName.",
+      );
+    }
     return readFromUrl(source.fileUrl, source.fileName);
   }
 

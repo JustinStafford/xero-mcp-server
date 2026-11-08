@@ -2,15 +2,13 @@ import { z } from "zod";
 
 import { addXeroInvoiceAttachment } from "../../handlers/add-xero-invoice-attachment.handler.js";
 import { CreateXeroTool } from "../../helpers/create-xero-tool.js";
-import {
-  ATTACHMENT_SOURCE_DESCRIPTION,
-  attachmentSourceSchema,
-} from "../../helpers/attachment-source-schema.js";
+import { describeAttachmentSources } from "../../helpers/attachment-access.js";
+import { attachmentSourceSchema } from "../../helpers/attachment-source-schema.js";
 
 const AddInvoiceAttachmentTool = CreateXeroTool(
   "add-invoice-attachment",
   `Attach a file to a bill or an invoice. In Xero a bill and a sales invoice are \
-both invoices, so this covers both. ${ATTACHMENT_SOURCE_DESCRIPTION} \
+both invoices, so this covers both. ${describeAttachmentSources()} \
 The attachment is read back from Xero after the upload to confirm it is stored.`,
   {
     invoiceNumberOrId: z
@@ -20,7 +18,7 @@ The attachment is read back from Xero after the upload to confirm it is stored.`
 or its Xero invoice ID. Numbers are organisation-specific and resolved within the \
 organisation named in the organisation argument.",
       ),
-    ...attachmentSourceSchema,
+    ...attachmentSourceSchema(),
     includeOnline: z
       .boolean()
       .optional()

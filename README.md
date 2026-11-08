@@ -224,6 +224,21 @@ These are limits in Xero's API, not gaps in this server. No tool here can work a
   capped per call to stay inside the 60-calls-a-minute limit.
 - **Attachments are capped at 3.5MB.**
 
+### Attachments: local or hosted
+
+By default the attachment tools exchange files as base64 in the tool call, so the server never
+touches its own disk or fetches a link. Two settings widen that for a server running on your
+own machine:
+
+| Setting | Allows |
+| --- | --- |
+| `XERO_LOCAL_FILES=1` | `filePath` on uploads and `outputPath` on downloads |
+| `XERO_FILE_URLS=1` | `fileUrl` on uploads |
+
+Leave both off on a shared or hosted server. A path or link named in a tool call could otherwise
+reach the server's own credentials or its private network, and a prompt injected through a
+supplier's bill can name one.
+
 For detailed API documentation, please refer to the [MCP Protocol Specification](https://modelcontextprotocol.io/).
 
 ## For Developers
