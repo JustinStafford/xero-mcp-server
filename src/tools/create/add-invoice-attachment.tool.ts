@@ -3,12 +3,13 @@ import { z } from "zod";
 import { addXeroInvoiceAttachment } from "../../handlers/add-xero-invoice-attachment.handler.js";
 import { CreateXeroTool } from "../../helpers/create-xero-tool.js";
 import { describeAttachmentSources } from "../../helpers/attachment-access.js";
+import { describeUploadLinks } from "../../uploads/upload-config.js";
 import { attachmentSourceSchema } from "../../helpers/attachment-source-schema.js";
 
 const AddInvoiceAttachmentTool = CreateXeroTool(
   "add-invoice-attachment",
   `Attach a file to a bill or an invoice. In Xero a bill and a sales invoice are \
-both invoices, so this covers both. ${describeAttachmentSources()} \
+both invoices, so this covers both. ${describeAttachmentSources()}${describeUploadLinks()} \
 The attachment is read back from Xero after the upload to confirm it is stored.`,
   {
     invoiceNumberOrId: z

@@ -3,12 +3,13 @@ import { z } from "zod";
 import { addXeroBankTransactionAttachment } from "../../handlers/add-xero-bank-transaction-attachment.handler.js";
 import { CreateXeroTool } from "../../helpers/create-xero-tool.js";
 import { describeAttachmentSources } from "../../helpers/attachment-access.js";
+import { describeUploadLinks } from "../../uploads/upload-config.js";
 import { attachmentSourceSchema } from "../../helpers/attachment-source-schema.js";
 
 const AddBankTransactionAttachmentTool = CreateXeroTool(
   "add-bank-transaction-attachment",
   `Attach a file — typically a PDF receipt or invoice — to a bank transaction. This \
-covers spend-money and receive-money transactions. ${describeAttachmentSources()} \
+covers spend-money and receive-money transactions. ${describeAttachmentSources()}${describeUploadLinks()} \
 The attachment is read back from Xero after the upload to confirm it is stored.`,
   {
     bankTransactionId: z

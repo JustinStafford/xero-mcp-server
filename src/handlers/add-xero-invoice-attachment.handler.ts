@@ -4,8 +4,8 @@ import { xeroClient } from "../clients/xero-client.js";
 import { formatError } from "../helpers/format-error.js";
 import { getClientHeaders } from "../helpers/get-client-headers.js";
 import {
-  AttachmentSource,
-  readAttachmentSource,
+  AttachmentInput,
+  resolveAttachment,
 } from "../helpers/read-attachment-source.js";
 import { describeInvoice, resolveInvoice } from "../helpers/resolve-invoice.js";
 import { XeroClientResponse } from "../types/tool-response.js";
@@ -27,13 +27,13 @@ export interface AddedAttachment {
  */
 export async function addXeroInvoiceAttachment(
   invoiceNumberOrId: string,
-  source: AttachmentSource,
+  source: AttachmentInput,
   includeOnline: boolean = false,
 ): Promise<XeroClientResponse<AddedAttachment>> {
   try {
     await xeroClient.authenticate();
 
-    const { body, name } = await readAttachmentSource(source);
+    const { body, name } = await resolveAttachment(source);
 
     const invoice = await resolveInvoice(invoiceNumberOrId);
     if (!invoice.invoiceID) {

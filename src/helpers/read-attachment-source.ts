@@ -288,3 +288,20 @@ export const readAttachmentSource = async (
 
   return readFromBase64(source.fileBase64 as string, source.fileName);
 };
+
+/** A file already in hand: an upload link's, which arrives as bytes. */
+export type AttachmentInput = AttachmentSource | AttachmentPayload;
+
+const isPayload = (input: AttachmentInput): input is AttachmentPayload =>
+  Buffer.isBuffer((input as AttachmentPayload).body);
+
+/**
+ * The file to attach, from a tool call's source or from bytes already received.
+ *
+ * Tool schemas only carry the AttachmentSource fields, so a caller can't reach
+ * the bytes branch through a tool argument.
+ */
+export const resolveAttachment = async (
+  input: AttachmentInput,
+): Promise<AttachmentPayload> =>
+  isPayload(input) ? input : readAttachmentSource(input);
