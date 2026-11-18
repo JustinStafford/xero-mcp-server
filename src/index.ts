@@ -4,12 +4,21 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { XeroMcpServer } from "./server/xero-mcp-server.js";
 import { ToolFactory } from "./tools/tool-factory.js";
 import { formatError } from "./helpers/format-error.js";
+import { uploadConfig } from "./uploads/upload-config.js";
+import { uploadLinks } from "./uploads/upload-links.js";
+import { startUploadServer } from "./uploads/upload-server.js";
 
 const main = async () => {
   // Create an MCP server
   const server = XeroMcpServer.GetServer();
 
   ToolFactory(server);
+
+  // One-time upload links, where switched on: a loopback listener beside stdio.
+  const uploads = uploadConfig();
+  if (uploads) {
+    startUploadServer(uploads, uploadLinks(uploads.ttlMs));
+  }
 
   // Start receiving messages on stdin and sending messages on stdout
   const transport = new StdioServerTransport();

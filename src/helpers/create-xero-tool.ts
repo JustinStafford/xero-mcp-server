@@ -58,7 +58,9 @@ const withTenant = <Args extends ZodRawShapeCompat>(
       };
     }
 
-    return tenantContext.run({ tenantId: tenant.tenantId }, async () => {
+    return tenantContext.run(
+      { tenantId: tenant.tenantId, tenantName: tenant.tenantName },
+      async () => {
       // Validated inside the tenant context so codes are checked against the
       // organisation being written to, not whichever was resolved last.
       // No-ops when the arguments carry no account codes, so reads are unaffected.

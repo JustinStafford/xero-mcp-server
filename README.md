@@ -186,6 +186,8 @@ payroll.timesheets
 - `create-tracking-option`: Create a new tracking option
 - `add-invoice-attachment`: Attach a file to an invoice or bill
 - `add-bank-transaction-attachment`: Attach a file to a bank transaction
+- `create-attachment-upload-link`: Make a one-time link for attaching a file (only where upload links are on)
+- `get-attachment-upload-result`: Check what a one-time upload link attached (only where upload links are on)
 - `set-invoice-expected-payment-date`: Set ExpectedPaymentDate on unpaid authorised sales invoices, in bulk
 - `update-bank-transaction`: Update an existing bank transaction
 - `update-contact`: Update an existing contact
@@ -238,6 +240,32 @@ own machine:
 Leave both off on a shared or hosted server. A path or link named in a tool call could otherwise
 reach the server's own credentials or its private network, and a prompt injected through a
 supplier's bill can name one.
+
+### Attachments: one-time upload links
+
+Base64 in a tool call means the agent types the whole file out, which is slow and one wrong
+character corrupts it. On a hosted server, upload links avoid that: the file goes straight to
+the server and the agent only handles a short link.
+
+| Setting | Meaning |
+| --- | --- |
+| `XERO_UPLOAD_PORT` | Loopback port for the upload listener (`127.0.0.1` only) |
+| `XERO_UPLOAD_URL` | Public https base the links are built on, e.g. `https://mcp.example.com/xero-upload`. Whatever fronts the server must forward that path, without credentials, to the port |
+| `XERO_UPLOAD_TTL_SECONDS` | How long a link lasts. Default 600, at most 900 |
+| `XERO_UPLOAD_MAX_BYTES` | Largest file a link accepts. Default 3.5MB |
+
+Both of the first two must be set, or the feature and its two tools are absent.
+
+1. `create-attachment-upload-link` names the organisation and the bill, invoice or bank
+   transaction, and returns a link. The record is looked up then, and the link is tied to it.
+2. The file is sent to the link: `curl -F "file=@bill.pdf" <link>`, or open it in a browser and
+   choose the file. The server attaches it, reads it back from Xero and compares SHA-256.
+3. `get-attachment-upload-result` reports the file's name, size and SHA-256, and whether the
+   copy in Xero matched.
+
+A link is unguessable, works once, and expires. It accepts one PDF, PNG or JPG, judged by the
+file's contents rather than its name. Links live in memory, so a restart cancels them. The
+token is the link's only protection: tokens, file names and contents are never logged.
 
 For detailed API documentation, please refer to the [MCP Protocol Specification](https://modelcontextprotocol.io/).
 

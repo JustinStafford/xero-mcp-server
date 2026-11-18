@@ -4,8 +4,8 @@ import { xeroClient } from "../clients/xero-client.js";
 import { formatError } from "../helpers/format-error.js";
 import { getClientHeaders } from "../helpers/get-client-headers.js";
 import {
-  AttachmentSource,
-  readAttachmentSource,
+  AttachmentInput,
+  resolveAttachment,
 } from "../helpers/read-attachment-source.js";
 import {
   describeBankTransaction,
@@ -27,12 +27,12 @@ export interface AddedBankTransactionAttachment {
  */
 export async function addXeroBankTransactionAttachment(
   bankTransactionId: string,
-  source: AttachmentSource,
+  source: AttachmentInput,
 ): Promise<XeroClientResponse<AddedBankTransactionAttachment>> {
   try {
     await xeroClient.authenticate();
 
-    const { body, name } = await readAttachmentSource(source);
+    const { body, name } = await resolveAttachment(source);
 
     const transaction = await resolveBankTransaction(bankTransactionId);
     if (!transaction.bankTransactionID) {

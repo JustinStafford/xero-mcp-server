@@ -17,6 +17,8 @@ import { AsyncLocalStorage } from "node:async_hooks";
  */
 export interface TenantContext {
   tenantId: string;
+  /** For labels shown to people; never used to pick the organisation. */
+  tenantName?: string;
 }
 
 export const tenantContext = new AsyncLocalStorage<TenantContext>();

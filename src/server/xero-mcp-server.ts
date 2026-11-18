@@ -1,5 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
+import { uploadsEnabled } from "../uploads/upload-config.js";
+
 /**
  * Stated once here rather than repeated across ~50 tool descriptions. These
  * are the rules that are not recoverable from any single tool's schema.
@@ -24,6 +26,18 @@ Writes
 - Manual journals are created as DRAFT unless a status is explicitly requested.
   Review the draft in Xero before posting it.`;
 
+const UPLOAD_INSTRUCTIONS = `
+
+Attaching files
+- Never type a file's contents out as base64. Call create-attachment-upload-link for
+  the bill, invoice or bank transaction, send the file to the link it returns (curl
+  from a sandbox or shell that has the file, or the user opens it and chooses the
+  file), then call get-attachment-upload-result and check the name, size and SHA-256.
+- Check the record's existing attachments first, so a file isn't attached twice.`;
+
+export const serverInstructions = (): string =>
+  INSTRUCTIONS + (uploadsEnabled() ? UPLOAD_INSTRUCTIONS : "");
+
 export class XeroMcpServer {
   private static instance: McpServer | null = null;
 
@@ -36,7 +50,7 @@ export class XeroMcpServer {
           name: "Xero MCP Server",
           version: "1.0.0",
         },
-        { instructions: INSTRUCTIONS },
+        { instructions: serverInstructions() },
       );
     }
     return XeroMcpServer.instance;
