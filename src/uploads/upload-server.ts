@@ -290,20 +290,71 @@ export const uploadRequestHandler = (
   };
 };
 
-/** Start the loopback listener. A failure is recorded, not thrown: the tools report it. */
+export interface UploadServerOptions {
+  /** How long to wait before trying a busy port again. */
+  retryMs?: number;
+  /** How many times to try a busy port again before giving up. */
+  retries?: number;
+  /** The MCP client's end of the conversation: when it closes, so does the listener. */
+  input?: NodeJS.ReadableStream;
+}
+
+/**
+ * Start the loopback listener. A failure is recorded, not thrown: the tools report it.
+ *
+ * The listener must never be what keeps this process alive. This is a stdio
+ * server: when its client goes away, stdin closes and the process has to end.
+ * A listener holding the event loop open would leave an orphan behind, still
+ * bound to the port (so its replacement can't take uploads) and still holding
+ * the Xero token. So the listener is unref'd, and closes when stdin does.
+ *
+ * A replacement can start before the process it replaces has gone, so a busy
+ * port is tried again for a while rather than given up on.
+ */
 export const startUploadServer = (
   config: UploadConfig,
   links: UploadLinks,
+  options: UploadServerOptions = {},
 ): http.Server => {
+  const { retryMs = 2000, retries = 30, input = process.stdin } = options;
+
   const server = http.createServer(uploadRequestHandler(config, links));
   // No slow trickle of headers or body can hold a connection open for long.
   server.headersTimeout = 15_000;
   server.requestTimeout = 120_000;
+  server.unref();
 
-  server.on("error", (error) => {
+  let attempts = 0;
+  let stopped = false;
+  const listen = (): void => {
+    if (!stopped) {
+      server.listen(config.port, "127.0.0.1");
+    }
+  };
+
+  server.on("listening", () => setListenerProblem(null));
+  server.on("error", (error: NodeJS.ErrnoException) => {
     setListenerProblem(`The upload listener failed: ${error.message}`);
+
+    if (error.code === "EADDRINUSE" && !stopped && attempts < retries) {
+      attempts += 1;
+      setTimeout(listen, retryMs).unref();
+      return;
+    }
     console.error(`upload listener error: ${error.message}`);
   });
-  server.listen(config.port, "127.0.0.1", () => setListenerProblem(null));
+
+  const stop = (): void => {
+    stopped = true;
+    setListenerProblem("The upload listener has stopped.");
+    if (server.listening) {
+      // An upload already in flight finishes; nothing new is accepted.
+      server.close();
+    }
+  };
+  input.once("end", stop);
+  input.once("close", stop);
+
+  listen();
   return server;
 };
